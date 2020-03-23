@@ -10,8 +10,10 @@ import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.toggle.AbilityToggle;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.Date;
+import java.util.Random;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
@@ -96,6 +98,24 @@ public class VladimirLvBot extends AbilityBot {
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .action(ctx -> silent.send("Больных в Латвии: " + covidService.getCovidCount(), ctx.chatId()))
+                .build();
+    }
+
+    private User getRandomUser() {
+        Random generator = new Random();
+        Object[] values = users().values().toArray();
+        Object randomValue = values[generator.nextInt(values.length)];
+        return (User) randomValue;
+    }
+
+    public Ability shot() {
+        return Ability
+                .builder()
+                .name("shot")
+                .info("убивает случайного пользователя")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(nameService.getAuthorName(getRandomUser()) + " умер", ctx.chatId()))
                 .build();
     }
 
