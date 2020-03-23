@@ -30,3 +30,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### mysql ###
+.db/
+/.env
+/docker/spring_env.env
+/docker/jar/
+/db/

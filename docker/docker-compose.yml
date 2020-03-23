@@ -1,0 +1,25 @@
+version: "3"
+services:
+  mariadb:
+    image: mariadb:10.5.1
+    container_name: mariadb-server
+    volumes:
+      - ../db:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: test
+      MYSQL_DATABASE: database
+    ports:
+      - "8002:3306"
+  vladimir-bot:
+    build: ./
+    env_file:
+      - spring_env.env
+    depends_on:
+      - mariadb
+    ports:
+      - "8001:80"
+    links:
+      - mariadb
