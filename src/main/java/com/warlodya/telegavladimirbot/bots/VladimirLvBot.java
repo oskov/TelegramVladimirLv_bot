@@ -1,5 +1,6 @@
 package com.warlodya.telegavladimirbot.bots;
 
+import com.warlodya.telegavladimirbot.SessionManager;
 import com.warlodya.telegavladimirbot.repositories.UserRepository;
 import com.warlodya.telegavladimirbot.services.AnekdotService;
 import com.warlodya.telegavladimirbot.services.AuthorNameService;
@@ -36,6 +37,8 @@ public class VladimirLvBot extends AbilityBot {
     private CovidService covidService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private SessionManager sessionManager;
 
     public VladimirLvBot(@Value("${VLADIMIR_TOKEN}") String botToken,
                          @Qualifier("VladimirLvBotToggle") AbilityToggle toggle) {
@@ -67,6 +70,17 @@ public class VladimirLvBot extends AbilityBot {
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .action(ctx -> silent.send("Bye! " + nameService.getAuthorName(ctx), ctx.chatId()))
+                .build();
+    }
+
+    public Ability shrug() {
+        return Ability
+                .builder()
+                .name("shrug")
+                .info("¯\\_(ツ)_/¯")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send("¯\\_(ツ)_/¯", ctx.chatId()))
                 .build();
     }
 
