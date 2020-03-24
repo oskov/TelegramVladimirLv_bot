@@ -37,3 +37,5 @@ out/
 /docker/spring_env.env
 /docker/jar/
 /db/
+/mongoBkp/
+/mongoDb/

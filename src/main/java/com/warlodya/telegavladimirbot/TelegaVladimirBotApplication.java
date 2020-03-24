@@ -11,5 +11,4 @@ public class TelegaVladimirBotApplication {
         ApiContextInitializer.init();
         SpringApplication.run(TelegaVladimirBotApplication.class, args);
     }
-
 }

@@ -1,25 +1,22 @@
 version: "3"
 services:
-  mariadb:
-    image: mariadb:10.5.1
-    container_name: mariadb-server
-    volumes:
-      - ../db:/var/lib/mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: test
-      MYSQL_DATABASE: database
+  mongodb:
+    image: mongo
+    container_name: telega-bot-mongo-db
     ports:
-      - "8002:3306"
+      - 8002:27017
+    volumes:
+      - ../mongoDb:/data/db
+      - ../mongoBkp:/data/bkp
+    restart: always
   vladimir-bot:
     build: ./
+    container_name: telega-bot
     env_file:
       - spring_env.env
     depends_on:
-      - mariadb
+      - mongodb
     ports:
-      - "8001:80"
+      - "8001:8080"
     links:
-      - mariadb
+      - mongodb

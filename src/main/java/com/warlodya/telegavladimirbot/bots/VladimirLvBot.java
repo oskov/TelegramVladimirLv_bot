@@ -1,5 +1,6 @@
 package com.warlodya.telegavladimirbot.bots;
 
+import com.warlodya.telegavladimirbot.repositories.UserRepository;
 import com.warlodya.telegavladimirbot.services.AnekdotService;
 import com.warlodya.telegavladimirbot.services.AuthorNameService;
 import com.warlodya.telegavladimirbot.services.CovidService;
@@ -10,10 +11,14 @@ import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.toggle.AbilityToggle;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
@@ -29,10 +34,18 @@ public class VladimirLvBot extends AbilityBot {
     private AnekdotService anekdotService;
     @Autowired
     private CovidService covidService;
+    @Autowired
+    private UserRepository userRepository;
 
     public VladimirLvBot(@Value("${VLADIMIR_TOKEN}") String botToken,
                          @Qualifier("VladimirLvBotToggle") AbilityToggle toggle) {
         super(botToken, BOT_USERNAME, toggle);
+    }
+
+    @Override
+    public void onUpdateReceived(Update update) {
+        userRepository.save(update.getMessage().getFrom());
+        super.onUpdateReceived(update);
     }
 
     public Ability sayHello() {
@@ -101,11 +114,19 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
+    private List<User> getUsers() {
+        Iterable<User> userIterator = userRepository.findAll();
+        List<User> users = new LinkedList<>();
+        for (User user : userIterator) {
+            users.add(user);
+        }
+        return users;
+    }
+
     private User getRandomUser() {
         Random generator = new Random();
-        Object[] values = users().values().toArray();
-        Object randomValue = values[generator.nextInt(values.length)];
-        return (User) randomValue;
+        List<User> users = getUsers();
+        return users.get(generator.nextInt(users.size()));
     }
 
     public Ability shot() {
@@ -119,8 +140,20 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
+    public Ability userList() {
+        return Ability
+                .builder()
+                .name("users")
+                .info("известные боту пользователи")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(getUsers().stream().map(user -> nameService.getAuthorName(user)).collect(Collectors.joining(" ")), ctx.chatId()))
+                .build();
+    }
+
     @Override
     public int creatorId() {
         return 758056390;
     }
+
 }
