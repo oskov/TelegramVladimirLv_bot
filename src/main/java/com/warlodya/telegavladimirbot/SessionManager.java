@@ -1,7 +1,7 @@
 package com.warlodya.telegavladimirbot;
 
+import com.warlodya.telegavladimirbot.models.ChatUser;
 import com.warlodya.telegavladimirbot.models.Session;
-import com.warlodya.telegavladimirbot.models.UserChatSession;
 import com.warlodya.telegavladimirbot.repositories.SessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,11 +16,11 @@ public class SessionManager {
     private SessionRepository sessionRepository;
 
     public Optional<Session> getSessionForUser(User user, long chatId) {
-        UserChatSession userChatSession = UserChatSession.getFrom(user, chatId);
-        Optional<Session> session = sessionRepository.findById(userChatSession);
+        ChatUser chatUser = ChatUser.getFrom(user, chatId);
+        Optional<Session> session = sessionRepository.findById(chatUser);
         if (session.isPresent()) {
             if (session.get().getExpirationDate().before(new Date())) {
-                clearSessionForUser(userChatSession);
+                clearSessionForUser(chatUser);
                 session = Optional.empty();
             }
         }
@@ -31,11 +31,11 @@ public class SessionManager {
         sessionRepository.save(session);
     }
 
-    public void clearSessionForUser(UserChatSession userChatSession) {
-        sessionRepository.deleteById(userChatSession);
+    public void clearSessionForUser(ChatUser chatUser) {
+        sessionRepository.deleteById(chatUser);
     }
 
     public void clearSessionForUser(User user, long chatId) {
-        sessionRepository.deleteById(UserChatSession.getFrom(user, chatId));
+        sessionRepository.deleteById(ChatUser.getFrom(user, chatId));
     }
 }

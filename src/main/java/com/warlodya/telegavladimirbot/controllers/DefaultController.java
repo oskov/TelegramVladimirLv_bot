@@ -1,15 +1,15 @@
 package com.warlodya.telegavladimirbot.controllers;
 
+import com.warlodya.telegavladimirbot.models.ChatUser;
 import com.warlodya.telegavladimirbot.models.Question;
 import com.warlodya.telegavladimirbot.models.Session;
+import com.warlodya.telegavladimirbot.repositories.ChatUserRepository;
 import com.warlodya.telegavladimirbot.repositories.QuestionRepository;
 import com.warlodya.telegavladimirbot.repositories.SessionRepository;
-import com.warlodya.telegavladimirbot.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -20,7 +20,7 @@ public class DefaultController {
     @Autowired
     private QuestionRepository questionRepository;
     @Autowired
-    private UserRepository userRepository;
+    private ChatUserRepository chatUserRepository;
     @Autowired
     private SessionRepository sessionRepository;
     @Autowired
@@ -34,9 +34,9 @@ public class DefaultController {
     }
 
     @GetMapping("/userList")
-    public List<User> users() {
-        List<User> list = new LinkedList<>();
-        userRepository.findAll().forEach(list::add);
+    public List<ChatUser> users() {
+        List<ChatUser> list = new LinkedList<>();
+        chatUserRepository.findAll().forEach(list::add);
         return list;
     }
 
@@ -56,8 +56,8 @@ public class DefaultController {
 
     @GetMapping("/clearUsers")
     public long clearUsers() {
-        long count = userRepository.count();
-        userRepository.deleteAll();
+        long count = chatUserRepository.count();
+        chatUserRepository.deleteAll();
         return count;
     }
 
@@ -66,6 +66,12 @@ public class DefaultController {
         long count = sessionRepository.count();
         sessionRepository.deleteAll();
         return count;
+    }
+
+    @GetMapping("/dropAll")
+    public boolean dropAll() {
+        mongo.getDb().drop();
+        return true;
     }
 
     @GetMapping("/test")

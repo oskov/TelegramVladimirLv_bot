@@ -1,7 +1,8 @@
 package com.warlodya.telegavladimirbot.bots;
 
 import com.warlodya.telegavladimirbot.SessionManager;
-import com.warlodya.telegavladimirbot.repositories.UserRepository;
+import com.warlodya.telegavladimirbot.models.ChatUser;
+import com.warlodya.telegavladimirbot.repositories.ChatUserRepository;
 import com.warlodya.telegavladimirbot.services.AnekdotService;
 import com.warlodya.telegavladimirbot.services.AuthorNameService;
 import com.warlodya.telegavladimirbot.services.CovidService;
@@ -36,7 +37,7 @@ public class VladimirLvBot extends AbilityBot {
     @Autowired
     private CovidService covidService;
     @Autowired
-    private UserRepository userRepository;
+    private ChatUserRepository chatUserRepository;
     @Autowired
     private SessionManager sessionManager;
 
@@ -47,7 +48,7 @@ public class VladimirLvBot extends AbilityBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        userRepository.save(update.getMessage().getFrom());
+        chatUserRepository.save(ChatUser.getFrom(update.getMessage().getFrom(), update.getMessage().getChatId()));
         super.onUpdateReceived(update);
     }
 
@@ -128,19 +129,21 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
-    private List<User> getUsers() {
-        Iterable<User> userIterator = userRepository.findAll();
-        List<User> users = new LinkedList<>();
-        for (User user : userIterator) {
+    private List<ChatUser> getUsers() {
+        Iterable<ChatUser> userIterator = chatUserRepository.findAll();
+        List<ChatUser> users = new LinkedList<>();
+        for (ChatUser user : userIterator) {
             users.add(user);
         }
         return users;
     }
 
-    private User getRandomUser() {
+    //TODO: refactor
+    private User getRandomUser(long chatId) {
         Random generator = new Random();
-        List<User> users = getUsers();
-        return users.get(generator.nextInt(users.size()));
+        List<ChatUser> users = getUsers();
+        users.removeIf(chatUser -> chatUser.getChatId() != chatId);
+        return users.get(generator.nextInt(users.size())).getUser();
     }
 
     public Ability shot() {
@@ -150,7 +153,7 @@ public class VladimirLvBot extends AbilityBot {
                 .info("убивает случайного пользователя")
                 .locality(ALL)
                 .privacy(PUBLIC)
-                .action(ctx -> silent.send(nameService.getAuthorName(getRandomUser()) + " умер", ctx.chatId()))
+                .action(ctx -> silent.send(nameService.getAuthorName(getRandomUser(ctx.chatId())) + " умер", ctx.chatId()))
                 .build();
     }
 
@@ -161,13 +164,18 @@ public class VladimirLvBot extends AbilityBot {
                 .info("известные боту пользователи")
                 .locality(ALL)
                 .privacy(PUBLIC)
-                .action(ctx -> silent.send(getUsers().stream().map(user -> nameService.getAuthorName(user)).collect(Collectors.joining(" ")), ctx.chatId()))
+                .action(ctx -> silent.send(getUsers().stream().map(chatUser -> nameService.getAuthorName(chatUser.getUser())).collect(Collectors.joining(" , ")), ctx.chatId()))
                 .build();
     }
 
     @Override
     public int creatorId() {
         return 758056390;
+    }
+
+    //TODO: save this value in database
+    public long getMainChatId() {
+        return -332738460;
     }
 
 }

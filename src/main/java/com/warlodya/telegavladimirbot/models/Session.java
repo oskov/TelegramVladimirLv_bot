@@ -11,25 +11,25 @@ import java.util.Map;
 @Document
 public class Session {
     @Id
-    private UserChatSession userChatSession;
+    private ChatUser chatUser;
     private Date expirationDate;
     private Map<String, Object> map;
 
     public Session(User user, long chatId, Date expirationDate, Map<String, Object> map) {
-        this.userChatSession = new UserChatSession(user, chatId);
+        this.chatUser = new ChatUser(user, chatId);
         this.expirationDate = expirationDate;
         this.map = map;
     }
 
     @PersistenceConstructor
-    public Session(UserChatSession userChatSession, Date expirationDate, Map<String, Object> map) {
-        this.userChatSession = userChatSession;
+    public Session(ChatUser chatUser, Date expirationDate, Map<String, Object> map) {
+        this.chatUser = chatUser;
         this.expirationDate = expirationDate;
         this.map = map;
     }
 
-    public UserChatSession getUserChatSession() {
-        return userChatSession;
+    public ChatUser getChatUser() {
+        return chatUser;
     }
 
     public Date getExpirationDate() {
