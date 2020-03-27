@@ -7,7 +7,6 @@ import com.warlodya.telegavladimirbot.models.Question;
 import com.warlodya.telegavladimirbot.models.Session;
 import com.warlodya.telegavladimirbot.repositories.ChatUserRepository;
 import com.warlodya.telegavladimirbot.services.ActionOrTruthService;
-import com.warlodya.telegavladimirbot.services.AnacondazService;
 import com.warlodya.telegavladimirbot.services.AnekdotService;
 import com.warlodya.telegavladimirbot.services.AuthorNameService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
@@ -101,28 +103,6 @@ public class VladimirLvBot extends AbilityBot {
         return false;
     }
 
-    public Ability sayHello() {
-        return Ability
-                .builder()
-                .name("hello")
-                .info("says hello!")
-                .locality(ALL)
-                .privacy(PUBLIC)
-                .action(ctx -> silent.send("Hello! " + nameService.getAuthorName(ctx), ctx.chatId()))
-                .build();
-    }
-
-    public Ability sayGoodbye() {
-        return Ability
-                .builder()
-                .name("bye")
-                .info("says bye!")
-                .locality(ALL)
-                .privacy(PUBLIC)
-                .action(ctx -> silent.send("Bye! " + nameService.getAuthorName(ctx), ctx.chatId()))
-                .build();
-    }
-
     public Ability shrug() {
         return Ability
                 .builder()
@@ -156,17 +136,6 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
-    public Ability time() {
-        return Ability
-                .builder()
-                .name("время")
-                .info("показывает время и дату")
-                .locality(ALL)
-                .privacy(PUBLIC)
-                .action(ctx -> silent.send("Время тебя ебать, а еще " + new Date(), ctx.chatId()))
-                .build();
-    }
-
     public Ability shot() {
         return Ability
                 .builder()
@@ -189,17 +158,6 @@ public class VladimirLvBot extends AbilityBot {
                         .stream()
                         .map(chatUser -> nameService.getAuthorName(chatUser.getUser()))
                         .collect(Collectors.joining(" , ")), ctx.chatId()))
-                .build();
-    }
-
-    public Ability quote() {
-        return Ability
-                .builder()
-                .name("мысль")
-                .info("даёт годные мысли")
-                .locality(ALL)
-                .privacy(PUBLIC)
-                .action(ctx -> silent.send(AnacondazService.getQuote(), ctx.chatId()))
                 .build();
     }
 
