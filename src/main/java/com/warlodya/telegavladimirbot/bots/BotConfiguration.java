@@ -6,7 +6,7 @@ import org.telegram.abilitybots.api.toggle.AbilityToggle;
 import org.telegram.abilitybots.api.toggle.CustomToggle;
 
 @Configuration
-public class VladimirLvBotConfiguration {
+public class BotConfiguration {
 
     @Bean(name = "VladimirLvBotToggle")
     public AbilityToggle getVladimirLvBotToggle() {
@@ -17,6 +17,18 @@ public class VladimirLvBotConfiguration {
                 .turnOff("unban")
 //                .turnOff("report")
                 .toggle("report", "команды")
+                .turnOff("claim")
+                .turnOff("backup")
+                .turnOff("recover");
+    }
+
+    @Bean(name = "CovidBotToggle")
+    public AbilityToggle getCovidBotToggle() {
+        return new CustomToggle()
+                .turnOff("promote")
+                .turnOff("demote")
+                .turnOff("ban")
+                .turnOff("unban")
                 .turnOff("claim")
                 .turnOff("backup")
                 .turnOff("recover");

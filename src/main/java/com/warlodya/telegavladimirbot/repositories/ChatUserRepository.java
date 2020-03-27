@@ -5,4 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 public interface ChatUserRepository extends CrudRepository<ChatUser, User> {
+
 }

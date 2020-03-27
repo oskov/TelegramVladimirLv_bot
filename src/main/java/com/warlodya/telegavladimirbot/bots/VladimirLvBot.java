@@ -1,25 +1,28 @@
 package com.warlodya.telegavladimirbot.bots;
 
 import com.warlodya.telegavladimirbot.SessionManager;
+import com.warlodya.telegavladimirbot.models.Action;
 import com.warlodya.telegavladimirbot.models.ChatUser;
+import com.warlodya.telegavladimirbot.models.Question;
+import com.warlodya.telegavladimirbot.models.Session;
 import com.warlodya.telegavladimirbot.repositories.ChatUserRepository;
+import com.warlodya.telegavladimirbot.services.ActionOrTruthService;
+import com.warlodya.telegavladimirbot.services.AnacondazService;
 import com.warlodya.telegavladimirbot.services.AnekdotService;
 import com.warlodya.telegavladimirbot.services.AuthorNameService;
-import com.warlodya.telegavladimirbot.services.CovidService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.toggle.AbilityToggle;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
@@ -35,7 +38,7 @@ public class VladimirLvBot extends AbilityBot {
     @Autowired
     private AnekdotService anekdotService;
     @Autowired
-    private CovidService covidService;
+    private ActionOrTruthService actionOrTruthService;
     @Autowired
     private ChatUserRepository chatUserRepository;
     @Autowired
@@ -48,8 +51,54 @@ public class VladimirLvBot extends AbilityBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        chatUserRepository.save(ChatUser.getFrom(update.getMessage().getFrom(), update.getMessage().getChatId()));
-        super.onUpdateReceived(update);
+        //hack to ignore language_code
+        User user = update.getMessage().getFrom();
+        user = new User(user.getId(), user.getFirstName(), user.getBot(), user.getLastName(), user.getUserName(), "en");
+        chatUserRepository.save(ChatUser.getFrom(user, update.getMessage().getChatId()));
+        if (!processUpdate(update)) {
+            super.onUpdateReceived(update);
+        }
+    }
+
+    //TODO: refactor hardcoding
+    public boolean processUpdate(Update update) {
+        Message message = update.getMessage();
+        Optional<Session> session = sessionManager.getSessionForUser(message.getFrom(), message.getChatId());
+
+        if (session.isPresent() && session.get().getChatUser().getChatId() == message.getChatId()) {
+            String output;
+            if (message.getText().matches("/действие")) {
+                Action action = actionOrTruthService.getRandomAction();
+                output = "Действие от " + action.author + " : " + action.text;
+                silent.send(output, message.getChatId());
+                sessionManager.clearSessionForUser(message.getFrom(), message.getChatId());
+                return true;
+            } else if (message.getText().matches("/правда")) {
+                Question question = actionOrTruthService.getRandomQuestion();
+                output = "Вопрос от " + question.author + " : " + question.text;
+                silent.send(output, message.getChatId());
+                sessionManager.clearSessionForUser(message.getFrom(), message.getChatId());
+                return true;
+            }
+        }
+
+        if (message.getText().matches("/addQuestion .+[?]$")) {
+            //TODO: change harcoded substring to normal regex;
+            String text = message.getText().substring(13);
+            Question question = new Question(text, nameService.getAuthorName(update.getMessage().getFrom()));
+            actionOrTruthService.addQuestion(question);
+            silent.send("Вопрос добавлен: " + question.text, update.getMessage().getChatId());
+            return true;
+        } else if (message.getText().matches("/addAction .+[!]$")) {
+            //TODO: change harcoded substring to normal regex;
+            String text = message.getText().substring(11);
+            Action action = new Action(text, nameService.getAuthorName(update.getMessage().getFrom()));
+            actionOrTruthService.addAction(action);
+            silent.send("Действие добавлено: " + action.text, update.getMessage().getChatId());
+            return true;
+        }
+
+        return false;
     }
 
     public Ability sayHello() {
@@ -118,34 +167,6 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
-    public Ability covid() {
-        return Ability
-                .builder()
-                .name("covid")
-                .info("показывает сколько больных в Латвии")
-                .locality(ALL)
-                .privacy(PUBLIC)
-                .action(ctx -> silent.send("Больных в Латвии: " + covidService.getCovidCount(), ctx.chatId()))
-                .build();
-    }
-
-    private List<ChatUser> getUsers() {
-        Iterable<ChatUser> userIterator = chatUserRepository.findAll();
-        List<ChatUser> users = new LinkedList<>();
-        for (ChatUser user : userIterator) {
-            users.add(user);
-        }
-        return users;
-    }
-
-    //TODO: refactor
-    private User getRandomUser(long chatId) {
-        Random generator = new Random();
-        List<ChatUser> users = getUsers();
-        users.removeIf(chatUser -> chatUser.getChatId() != chatId);
-        return users.get(generator.nextInt(users.size())).getUser();
-    }
-
     public Ability shot() {
         return Ability
                 .builder()
@@ -164,8 +185,57 @@ public class VladimirLvBot extends AbilityBot {
                 .info("известные боту пользователи")
                 .locality(ALL)
                 .privacy(PUBLIC)
-                .action(ctx -> silent.send(getUsers().stream().map(chatUser -> nameService.getAuthorName(chatUser.getUser())).collect(Collectors.joining(" , ")), ctx.chatId()))
+                .action(ctx -> silent.send(getUsers(ctx.chatId())
+                        .stream()
+                        .map(chatUser -> nameService.getAuthorName(chatUser.getUser()))
+                        .collect(Collectors.joining(" , ")), ctx.chatId()))
                 .build();
+    }
+
+    public Ability quote() {
+        return Ability
+                .builder()
+                .name("мысль")
+                .info("даёт годные мысли")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(AnacondazService.getQuote(), ctx.chatId()))
+                .build();
+    }
+
+    private List<ChatUser> getUsers() {
+        Iterable<ChatUser> userIterator = chatUserRepository.findAll();
+        List<ChatUser> users = new LinkedList<>();
+        for (ChatUser user : userIterator) {
+            users.add(user);
+        }
+        return users;
+    }
+
+    private List<ChatUser> getUsers(long chatId) {
+        Iterable<ChatUser> userIterator = chatUserRepository.findAll();
+        List<ChatUser> users = new LinkedList<>();
+        for (ChatUser user : userIterator) {
+            users.add(user);
+        }
+        users.removeIf(chatUser -> chatUser.getChatId() != chatId);
+        return users;
+    }
+
+    //TODO: refactor
+    private User getRandomUser(long chatId) {
+        Random generator = new Random();
+        List<ChatUser> users = getUsers();
+        users.removeIf(chatUser -> chatUser.getChatId() != chatId);
+        return users.get(generator.nextInt(users.size())).getUser();
+    }
+
+    // Once per 10 minutes
+    @Scheduled(fixedRate = 1000 * 60 * 90)
+    public void executeActionOrTruth() {
+        User user = getRandomUser(getMainChatId());
+        actionOrTruthService.startGameForUser(user, getMainChatId());
+        silent.send(nameService.getAuthorName(user) + " /правда или /действие", getMainChatId());
     }
 
     @Override
