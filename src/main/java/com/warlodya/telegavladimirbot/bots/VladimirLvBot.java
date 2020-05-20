@@ -53,10 +53,7 @@ public class VladimirLvBot extends AbilityBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        //hack to ignore language_code
-        User user = update.getMessage().getFrom();
-        user = new User(user.getId(), user.getFirstName(), user.getBot(), user.getLastName(), user.getUserName(), "en");
-        chatUserRepository.save(ChatUser.getFrom(user, update.getMessage().getChatId()));
+        chatUserRepository.save(ChatUser.getFrom(update.getMessage().getFrom(), update.getMessage().getChatId()));
         if (!processUpdate(update)) {
             super.onUpdateReceived(update);
         }
@@ -83,23 +80,23 @@ public class VladimirLvBot extends AbilityBot {
                 return true;
             }
         }
-
-        if (message.getText().matches("/addQuestion .+[?]$")) {
-            //TODO: change harcoded substring to normal regex;
-            String text = message.getText().substring(13);
-            Question question = new Question(text, nameService.getAuthorName(update.getMessage().getFrom()));
-            actionOrTruthService.addQuestion(question);
-            silent.send("Вопрос добавлен: " + question.text, update.getMessage().getChatId());
-            return true;
-        } else if (message.getText().matches("/addAction .+[!]$")) {
-            //TODO: change harcoded substring to normal regex;
-            String text = message.getText().substring(11);
-            Action action = new Action(text, nameService.getAuthorName(update.getMessage().getFrom()));
-            actionOrTruthService.addAction(action);
-            silent.send("Действие добавлено: " + action.text, update.getMessage().getChatId());
-            return true;
+        if (message.getText() != null) {
+            if (message.getText().matches("/addQuestion .+[?]$")) {
+                //TODO: change harcoded substring to normal regex;
+                String text = message.getText().substring(13);
+                Question question = new Question(text, nameService.getAuthorName(update.getMessage().getFrom()));
+                actionOrTruthService.addQuestion(question);
+                silent.send("Вопрос добавлен: " + question.text, update.getMessage().getChatId());
+                return true;
+            } else if (message.getText().matches("/addAction .+[!]$")) {
+                //TODO: change harcoded substring to normal regex;
+                String text = message.getText().substring(11);
+                Action action = new Action(text, nameService.getAuthorName(update.getMessage().getFrom()));
+                actionOrTruthService.addAction(action);
+                silent.send("Действие добавлено: " + action.text, update.getMessage().getChatId());
+                return true;
+            }
         }
-
         return false;
     }
 
@@ -161,6 +158,18 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
+    //TODO Refactor
+    public Ability say() {
+
+        return Ability
+                .builder()
+                .name("вопрос")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(actionOrTruthService.getRandomQuestion().toString(), ctx.chatId()))
+                .build();
+    }
+
     private List<ChatUser> getUsers() {
         Iterable<ChatUser> userIterator = chatUserRepository.findAll();
         List<ChatUser> users = new LinkedList<>();
@@ -188,7 +197,7 @@ public class VladimirLvBot extends AbilityBot {
         return users.get(generator.nextInt(users.size())).getUser();
     }
 
-    // Once per 10 minutes
+    // Once per 90 minutes
     @Scheduled(fixedRate = 1000 * 60 * 90)
     public void executeActionOrTruth() {
         User user = getRandomUser(getMainChatId());

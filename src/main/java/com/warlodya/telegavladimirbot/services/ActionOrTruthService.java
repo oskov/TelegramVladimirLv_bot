@@ -26,7 +26,7 @@ public class ActionOrTruthService {
     private SessionManager sessionManager;
 
     public void startGameForUser(User user, long chatId) {
-        LocalDateTime dateTime = LocalDateTime.now().plus(Duration.of(10, ChronoUnit.MINUTES));
+        LocalDateTime dateTime = LocalDateTime.now().plus(Duration.of(60, ChronoUnit.MINUTES));
         Date expirationDate = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
         Session session = new Session(user, chatId, expirationDate, new HashMap<>());
         sessionManager.saveSessionForUser(session);

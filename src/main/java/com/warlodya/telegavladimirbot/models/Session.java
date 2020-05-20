@@ -11,9 +11,9 @@ import java.util.Map;
 @Document
 public class Session {
     @Id
-    private ChatUser chatUser;
-    private Date expirationDate;
-    private Map<String, Object> map;
+    private final ChatUser chatUser;
+    private final Date expirationDate;
+    private final Map<String, Object> map;
 
     public Session(User user, long chatId, Date expirationDate, Map<String, Object> map) {
         this.chatUser = new ChatUser(user, chatId);

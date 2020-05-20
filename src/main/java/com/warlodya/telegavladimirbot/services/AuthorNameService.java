@@ -19,7 +19,7 @@ public class AuthorNameService {
 
         String authorName;
         if (userName != null) {
-            authorName = userName;
+            authorName = '@' + userName;
         } else {
             String firstName = fName != null ? fName : "";
             String lastName = lName != null ? lName : "";

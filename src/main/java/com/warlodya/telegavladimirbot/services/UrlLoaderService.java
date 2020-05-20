@@ -26,6 +26,7 @@ public class UrlLoaderService {
             String inputLine;
             while ((inputLine = br.readLine()) != null) {
                 sb.append(inputLine);
+                sb.append(System.lineSeparator());
             }
             br.close();
 

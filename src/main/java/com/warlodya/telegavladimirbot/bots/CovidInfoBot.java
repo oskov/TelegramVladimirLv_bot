@@ -29,10 +29,67 @@ public class CovidInfoBot extends AbilityBot {
         return Ability
                 .builder()
                 .name("covid")
-                .info("показывает сколько больных в Латвии")
+                .info("Confirmed cases in Latvia")
                 .locality(ALL)
                 .privacy(PUBLIC)
-                .action(ctx -> silent.send("Больных в Латвии: " + covidService.getCovidCount(), ctx.chatId()))
+                .action(ctx -> silent.send(covidService.getCovidCountForCountry("Latvia"), ctx.chatId()))
+                .build();
+    }
+
+    public Ability countries() {
+        return Ability
+                .builder()
+                .name("countries")
+                .info("Available counties for data request")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(String.join("\n", covidService.getCountrySet()), ctx.chatId()))
+                .build();
+    }
+
+    public Ability confirmed() {
+        return Ability
+                .builder()
+                .name("topconfirmed")
+                .info("Top 10 countries by confirmed cases")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(covidService.getTopConfirmed(), ctx.chatId()))
+                .build();
+    }
+
+    public Ability deaths() {
+        return Ability
+                .builder()
+                .name("topdeaths")
+                .info("Top 10 countries by death cases")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> silent.send(covidService.getTopDeaths(), ctx.chatId()))
+                .build();
+    }
+
+    public Ability covidForCountry() {
+        return Ability
+                .builder()
+                .name("covidin")
+                .info("Covid data for country. Example: /covidIn Latvia")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .input(1)
+                .action(ctx -> silent.send(covidService.getCovidCountForCountry(ctx.firstArg()), ctx.chatId()))
+                .build();
+    }
+
+    public Ability weekReport() {
+        return Ability
+                .builder()
+                .name("weekreportfor")
+                .info("Covid data for country. Example: /weekReportFor Latvia")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .input(1)
+                .action(ctx -> silent.send(covidService.generateWeekReportForCountry(ctx.firstArg()), ctx.chatId()))
                 .build();
     }
 

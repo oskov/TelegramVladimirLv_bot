@@ -11,5 +11,10 @@ public class Question {
         this.text = text;
         this.author = author;
     }
+    // TODO: delete this
 
+    @Override
+    public String toString() {
+        return "Вопрос от " + author + " " + text;
+    }
 }

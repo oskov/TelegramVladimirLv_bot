@@ -7,8 +7,8 @@ import org.telegram.telegrambots.meta.api.objects.User;
 @Document
 public class ChatUser {
     @Id
-    private User user;
-    private long chatId;
+    private final User user;
+    private final long chatId;
 
     public ChatUser(User user, long chatId) {
         this.user = user;
