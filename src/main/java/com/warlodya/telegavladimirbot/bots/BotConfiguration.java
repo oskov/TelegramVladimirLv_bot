@@ -21,16 +21,4 @@ public class BotConfiguration {
                 .turnOff("backup")
                 .turnOff("recover");
     }
-
-    @Bean(name = "CovidBotToggle")
-    public AbilityToggle getCovidBotToggle() {
-        return new CustomToggle()
-                .turnOff("promote")
-                .turnOff("demote")
-                .turnOff("ban")
-                .turnOff("unban")
-                .turnOff("claim")
-                .turnOff("backup")
-                .turnOff("recover");
-    }
 }
