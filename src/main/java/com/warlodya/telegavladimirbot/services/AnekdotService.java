@@ -15,8 +15,12 @@ public class AnekdotService {
     private static final String regex = "<div class=\"text\" id=\"\\d*\">(?<anekdot>[\\W\\s]+)<\\/div>";
     private static final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
 
+    private final UrlLoaderService urlLoaderService;
+
     @Autowired
-    private UrlLoaderService urlLoaderService;
+    public AnekdotService(UrlLoaderService urlLoaderService) {
+        this.urlLoaderService = urlLoaderService;
+    }
 
     public String getAnekdot() {
         String html = urlLoaderService.load(url);

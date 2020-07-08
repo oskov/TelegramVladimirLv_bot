@@ -18,12 +18,18 @@ import java.util.*;
 
 @Component
 public class ActionOrTruthService {
+    private final ActionRepository actionRepository;
+    private final QuestionRepository questionRepository;
+    private final SessionManager sessionManager;
+
     @Autowired
-    private ActionRepository actionRepository;
-    @Autowired
-    private QuestionRepository questionRepository;
-    @Autowired
-    private SessionManager sessionManager;
+    public ActionOrTruthService(ActionRepository actionRepository,
+                                QuestionRepository questionRepository,
+                                SessionManager sessionManager) {
+        this.actionRepository = actionRepository;
+        this.questionRepository = questionRepository;
+        this.sessionManager = sessionManager;
+    }
 
     public void startGameForUser(User user, long chatId) {
         LocalDateTime dateTime = LocalDateTime.now().plus(Duration.of(60, ChronoUnit.MINUTES));

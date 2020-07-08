@@ -12,8 +12,12 @@ import java.util.Optional;
 
 @Component
 public class SessionManager {
+    private final SessionRepository sessionRepository;
+
     @Autowired
-    private SessionRepository sessionRepository;
+    public SessionManager(SessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
+    }
 
     public Optional<Session> getSessionForUser(User user, long chatId) {
         ChatUser chatUser = ChatUser.getFrom(user, chatId);

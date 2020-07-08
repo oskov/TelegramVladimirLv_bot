@@ -12,7 +12,6 @@ import com.warlodya.telegavladimirbot.services.AuthorNameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
@@ -21,10 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
@@ -170,6 +166,29 @@ public class VladimirLvBot extends AbilityBot {
                 .build();
     }
 
+    private String giveStats(String name) {
+        Random r = new Random();
+        return name + " : " + "Сила: " + r.nextInt(9) + " Ловкость: " + r.nextInt(9) + " Остальное: " + r.nextInt(9);
+    }
+
+    public Ability stats() {
+
+        return Ability
+                .builder()
+                .name("stats")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .action(ctx -> {
+                    List<ChatUser> list = new ArrayList<>();
+                    chatUserRepository.findAll().forEach(list::add);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Треугольник петя : Сила: 10 Ловкость: 10 Остальное: 10");
+                    list.forEach(user -> sb.append('\n').append(giveStats(nameService.getAuthorName(user.getUser()))));
+                    silent.send(sb.toString(), ctx.chatId());
+                })
+                .build();
+    }
+
     private List<ChatUser> getUsers() {
         Iterable<ChatUser> userIterator = chatUserRepository.findAll();
         List<ChatUser> users = new LinkedList<>();
@@ -198,12 +217,12 @@ public class VladimirLvBot extends AbilityBot {
     }
 
     // Once per 90 minutes
-    @Scheduled(fixedRate = 1000 * 60 * 90)
-    public void executeActionOrTruth() {
-        User user = getRandomUser(getMainChatId());
-        actionOrTruthService.startGameForUser(user, getMainChatId());
-        silent.send(nameService.getAuthorName(user) + " /правда или /действие", getMainChatId());
-    }
+//    @Scheduled(fixedRate = 1000 * 60 * 90)
+//    public void executeActionOrTruth() {
+//        User user = getRandomUser(getMainChatId());
+//        actionOrTruthService.startGameForUser(user, getMainChatId());
+//        silent.send(nameService.getAuthorName(user) + " /правда или /действие", getMainChatId());
+//    }
 
     @Override
     public int creatorId() {
