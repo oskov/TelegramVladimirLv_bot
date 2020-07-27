@@ -12,19 +12,27 @@ import com.warlodya.telegavladimirbot.services.AuthorNameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
+import org.telegram.abilitybots.api.objects.Reply;
+import org.telegram.abilitybots.api.objects.ReplyFlow;
 import org.telegram.abilitybots.api.toggle.AbilityToggle;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.validation.constraints.NotNull;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
+import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 @Component
 public class VladimirLvBot extends AbilityBot {
@@ -216,13 +224,61 @@ public class VladimirLvBot extends AbilityBot {
         return users.get(generator.nextInt(users.size())).getUser();
     }
 
-    // Once per 90 minutes
-//    @Scheduled(fixedRate = 1000 * 60 * 90)
-//    public void executeActionOrTruth() {
-//        User user = getRandomUser(getMainChatId());
-//        actionOrTruthService.startGameForUser(user, getMainChatId());
-//        silent.send(nameService.getAuthorName(user) + " /правда или /действие", getMainChatId());
-//    }
+//     Once per 90 minutes
+    @Scheduled(fixedRate = 1000 * 60 * 90)
+    public void executeActionOrTruth() {
+        User user = getRandomUser(getMainChatId());
+        actionOrTruthService.startGameForUser(user, getMainChatId());
+        silent.send(nameService.getAuthorName(user) + " /правда или /действие", getMainChatId());
+    }
+
+    public void sendMessage(String text, long chatId, int msgId) {
+        try {
+            SendMessage smsg = new SendMessage();
+            smsg.setChatId(chatId);
+            smsg.setText(text);
+            smsg.setReplyToMessageId(msgId);
+            smsg.enableMarkdown(false);
+            sendApiMethod(smsg);
+        } catch (TelegramApiException exception) {
+            System.err.println(exception.getMessage());
+        }
+
+    }
+
+    public ReplyFlow brotherFlow() {
+
+        Reply trueFlow = Reply.of(upd -> sendMessage("Согласен брат.", getChatId(upd), upd.getMessage().getMessageId()),
+                hasMessageWith("в правде"));
+
+        Reply notTrue = Reply.of(upd -> sendMessage("Ты мне не брат", getChatId(upd), upd.getMessage().getMessageId()),
+                hasMessageWith("да"));
+
+        Reply no = Reply.of(upd -> sendMessage("Пидора ответ", getChatId(upd), upd.getMessage().getMessageId()),
+                hasMessageWith("нет").or(hasMessageWith("неа")));
+
+        ReplyFlow notTrueFlow = ReplyFlow.builder(db)
+                .action(upd -> sendMessage("Ты уверен брат?", getChatId(upd), upd.getMessage().getMessageId()))
+                .onlyIf(hasNotMessageWith("в правде").and(hasNotMessageWith("брат")))
+                .next(notTrue).next(no).build();
+
+        return ReplyFlow.builder(db)
+                .action(upd -> silent.send("в чем сила брат?", getChatId(upd)))
+                .onlyIf(hasMessageWith("брат"))
+                .next(trueFlow)
+                .next(notTrueFlow)
+                .build();
+    }
+
+    @NotNull
+    private Predicate<Update> hasMessageWith(String msg) {
+        return upd -> upd.getMessage().getText().equalsIgnoreCase(msg);
+    }
+
+    @NotNull
+    private Predicate<Update> hasNotMessageWith(String msg) {
+        return upd -> !upd.getMessage().getText().equalsIgnoreCase(msg);
+    }
 
     @Override
     public int creatorId() {
